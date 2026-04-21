@@ -1,170 +1,122 @@
-package com.example.videodownloader
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
 
-import android.Manifest
-import android.content.ClipboardManager
-import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
-import android.os.Bundle
-import android.view.View
-import android.widget.ArrayAdapter
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.work.Data
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
-import com.example.videodownloader.databinding.ActivityMainBinding
+    <!-- Legal Disclaimer -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardDisclaimer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="#FFF3E0"
+        app:cardElevation="0dp"
+        app:strokeColor="#FFB74D"
+        app:strokeWidth="1dp"
+        app:layout_constraintTop_toTopOf="parent">
 
-class MainActivity : AppCompatActivity() {
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:text="Disclaimer: Respect copyright laws. This app is for personal use for content you have rights to."
+            android:textColor="#E65100"
+            android:textStyle="bold" />
+    </com.google.android.material.card.MaterialCardView>
 
-    private lateinit binding: ActivityMainBinding
-    private val viewModel: MainViewModel by viewModels()
-    private lateinit var historyAdapter: HistoryAdapter
+    <!-- URL Input and Paste Button -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/inputLayoutUrl"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        android:hint="Video URL"
+        app:layout_constraintEnd_toStartOf="@id/btnPaste"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cardDisclaimer">
 
-    private val formatMap = mapOf(
-        "Best (Video + Audio)" to "best",
-        "Audio Only (MP3)" to "bestaudio",
-        "Data Saver (Worst)" to "worst"
-    )
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textUri" />
+    </com.google.android.material.textfield.TextInputLayout>
 
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (!isGranted) {
-            Toast.makeText(this, "Notifications disabled. App will still download.", Toast.LENGTH_SHORT).show()
-        }
-    }
+    <Button
+        android:id="@+id/btnPaste"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Paste"
+        app:layout_constraintBottom_toBottomOf="@id/inputLayoutUrl"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/inputLayoutUrl" />
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    <!-- Format Selection Dropdown -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/inputLayoutFormat"
+        style="@style/Widget.Material3.TextInputLayout.ExposedDropdownMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="Select Quality"
+        app:layout_constraintTop_toBottomOf="@id/inputLayoutUrl">
 
-        askForPermissions()
-        setupUI()
-        setupObservers()
-    }
+        <AutoCompleteTextView
+            android:id="@+id/dropdownFormat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="none" />
+    </com.google.android.material.textfield.TextInputLayout>
 
-    private fun askForPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
-        }
-    }
+    <!-- Download Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDownload"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="16dp"
+        android:text="Download"
+        app:layout_constraintTop_toBottomOf="@id/inputLayoutFormat" />
 
-    private fun setupUI() {
-        // Setup Dropdown
-        val formats = formatMap.keys.toList()
-        val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, formats)
-        binding.dropdownFormat.setAdapter(adapter)
-        binding.dropdownFormat.setText(formats[0], false) // Default selected
+    <!-- Progress Indicator -->
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:visibility="invisible"
+        app:layout_constraintTop_toBottomOf="@id/btnDownload" />
 
-        // Setup History Recycler
-        historyAdapter = HistoryAdapter(mutableListOf())
-        binding.rvHistory.layoutManager = LinearLayoutManager(this)
-        binding.rvHistory.adapter = historyAdapter
+    <TextView
+        android:id="@+id/tvProgressText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="0%"
+        android:visibility="invisible"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/progressBar" />
 
-        // Paste Button logic
-        binding.btnPaste.setOnClickListener {
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            if (clipboard.hasPrimaryClip()) {
-                val text = clipboard.primaryClip?.getItemAt(0)?.text
-                if (!text.isNullOrEmpty()) {
-                    binding.etUrl.setText(text)
-                }
-            }
-        }
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Download History (Current Session)"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvProgressText"
+        android:id="@+id/tvHistoryHeader"/>
 
-        // Download Button logic
-        binding.btnDownload.setOnClickListener {
-            val url = binding.etUrl.text.toString().trim()
-            if (url.isEmpty()) {
-                binding.inputLayoutUrl.error = "Please enter a URL"
-                return@setOnClickListener
-            }
-            binding.inputLayoutUrl.error = null
+    <!-- History List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvHistory"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvHistoryHeader" />
 
-            val selectedFriendlyName = binding.dropdownFormat.text.toString()
-            val formatCode = formatMap[selectedFriendlyName] ?: "best"
-
-            startDownload(url, formatCode)
-            binding.etUrl.text?.clear()
-        }
-    }
-
-    private fun setupObservers() {
-        viewModel.historyList.observe(this) { items ->
-            historyAdapter.updateItems(items)
-        }
-    }
-
-    private fun startDownload(url: String, formatCode: String) {
-        val inputData = Data.Builder()
-            .putString("url", url)
-            .putString("format", formatCode)
-            .build()
-
-        val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
-            .setInputData(inputData)
-            .build()
-
-        // Register to history
-        viewModel.addDownload(workRequest.id, url)
-
-        val workManager = WorkManager.getInstance(this)
-        workManager.enqueue(workRequest)
-
-        // Observe progress of this specific work request
-        workManager.getWorkInfoByIdLiveData(workRequest.id).observe(this) { workInfo ->
-            if (workInfo != null) {
-                when (workInfo.state) {
-                    WorkInfo.State.ENQUEUED -> {
-                        viewModel.updateStatus(workRequest.id, "Queued")
-                    }
-                    WorkInfo.State.RUNNING -> {
-                        binding.progressBar.visibility = View.VISIBLE
-                        binding.tvProgressText.visibility = View.VISIBLE
-                        
-                        val progress = workInfo.progress.getInt("progress", 0)
-                        binding.progressBar.progress = progress
-                        binding.tvProgressText.text = "$progress%"
-                        viewModel.updateStatus(workRequest.id, "Downloading", progress)
-                    }
-                    WorkInfo.State.SUCCEEDED -> {
-                        hideProgress()
-                        viewModel.updateStatus(workRequest.id, "Completed ✅")
-                        Toast.makeText(this, "Download finished!", Toast.LENGTH_SHORT).show()
-                    }
-                    WorkInfo.State.FAILED -> {
-                        hideProgress()
-                        viewModel.updateStatus(workRequest.id, "Failed ❌")
-                        val errorMsg = workInfo.outputData.getString("error")
-                        Toast.makeText(this, "Error: $errorMsg", Toast.LENGTH_LONG).show()
-                    }
-                    WorkInfo.State.CANCELLED -> {
-                        hideProgress()
-                        viewModel.updateStatus(workRequest.id, "Cancelled")
-                    }
-                    else -> {}
-                }
-            }
-        }
-    }
-
-    private fun hideProgress() {
-        binding.progressBar.visibility = View.INVISIBLE
-        binding.tvProgressText.visibility = View.INVISIBLE
-        binding.progressBar.progress = 0
-    }
-}
+</androidx.constraintlayout.widget.ConstraintLayout>

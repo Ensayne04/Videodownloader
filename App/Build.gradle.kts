@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.videodownloader"
-        minSdk = 24 // Required minimum for youtubedl-android to work well with ffmpeg
+        minSdk = 24
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -39,10 +39,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
     implementation("androidx.activity:activity-ktx:1.8.2")
 
-    // WorkManager for background downloads
+    // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
-    // youtubedl-android (yt-dlp wrapper) & FFmpeg for audio/video merging
+    // youtubedl-android
     implementation("com.github.yausername.youtubedl-android:library:0.17.0")
     implementation("com.github.yausername.youtubedl-android:ffmpeg:0.17.0")
 }

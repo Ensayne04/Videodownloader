@@ -1,5 +1,3 @@
-package com.example.videodownloader
-
 import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context

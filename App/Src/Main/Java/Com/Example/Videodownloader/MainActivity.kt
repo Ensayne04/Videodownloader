@@ -22,7 +22,7 @@ import com.example.videodownloader.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit binding: ActivityMainBinding
+    private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
     private lateinit var historyAdapter: HistoryAdapter
 
@@ -64,18 +64,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        // Setup Dropdown
         val formats = formatMap.keys.toList()
         val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, formats)
         binding.dropdownFormat.setAdapter(adapter)
-        binding.dropdownFormat.setText(formats[0], false) // Default selected
+        binding.dropdownFormat.setText(formats[0], false)
 
-        // Setup History Recycler
         historyAdapter = HistoryAdapter(mutableListOf())
         binding.rvHistory.layoutManager = LinearLayoutManager(this)
         binding.rvHistory.adapter = historyAdapter
 
-        // Paste Button logic
         binding.btnPaste.setOnClickListener {
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             if (clipboard.hasPrimaryClip()) {
@@ -86,7 +83,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Download Button logic
         binding.btnDownload.setOnClickListener {
             val url = binding.etUrl.text.toString().trim()
             if (url.isEmpty()) {
@@ -119,13 +115,11 @@ class MainActivity : AppCompatActivity() {
             .setInputData(inputData)
             .build()
 
-        // Register to history
         viewModel.addDownload(workRequest.id, url)
 
         val workManager = WorkManager.getInstance(this)
         workManager.enqueue(workRequest)
 
-        // Observe progress of this specific work request
         workManager.getWorkInfoByIdLiveData(workRequest.id).observe(this) { workInfo ->
             if (workInfo != null) {
                 when (workInfo.state) {

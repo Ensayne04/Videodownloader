@@ -46,9 +46,3 @@ dependencies {
     implementation("com.github.yausername.youtubedl-android:library:0.17.0")
     implementation("com.github.yausername.youtubedl-android:ffmpeg:0.17.0")
 }
-    private fun hideProgress() {
-        binding.progressBar.visibility = View.INVISIBLE
-        binding.tvProgressText.visibility = View.INVISIBLE
-        binding.progressBar.progress = 0
-    }
-}
